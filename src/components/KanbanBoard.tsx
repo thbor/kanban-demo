@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import KanbanColumn from './KanbanColumn';
 
 interface Card {
@@ -91,8 +91,89 @@ const initialColumns: Column[] = [
   }
 ];
 
+const STORAGE_KEY = 'kanban-board-state';
+const TIMESTAMP_KEY = 'kanban-board-last-saved';
+
+const loadStateFromStorage = (): Column[] | null => {
+  try {
+    const savedState = localStorage.getItem(STORAGE_KEY);
+    if (savedState) {
+      return JSON.parse(savedState);
+    }
+  } catch (error) {
+    console.error('Failed to load state from storage:', error);
+  }
+  return null;
+};
+
+const saveStateToStorage = (state: Column[]) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(TIMESTAMP_KEY, new Date().toISOString());
+  } catch (error) {
+    console.error('Failed to save state to storage:', error);
+  }
+};
+
+const getLastSavedTime = (): string | null => {
+  try {
+    return localStorage.getItem(TIMESTAMP_KEY);
+  } catch (error) {
+    console.error('Failed to get last saved time:', error);
+    return null;
+  }
+};
+
 const KanbanBoard: React.FC = () => {
-  const [columns, setColumns] = useState<Column[]>(initialColumns);
+  const [columns, setColumns] = useState<Column[]>(() => {
+    const savedState = loadStateFromStorage();
+    return savedState || initialColumns;
+  });
+  const [draggingOverColumn, setDraggingOverColumn] = useState<string | null>(null);
+  const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(() => getLastSavedTime());
+
+  const updateColumns = (newColumns: Column[] | ((prev: Column[]) => Column[])) => {
+    setColumns(prev => {
+      const updated = typeof newColumns === 'function' ? newColumns(prev) : newColumns;
+      saveStateToStorage(updated);
+      setLastSavedTime(new Date().toISOString());
+      return updated;
+    });
+  };
+
+  const handleManualSave = () => {
+    saveStateToStorage(columns);
+    setLastSavedTime(new Date().toISOString());
+    alert('Board state saved successfully!');
+  };
+
+  const handleManualLoad = () => {
+    const savedState = loadStateFromStorage();
+    if (savedState) {
+      updateColumns(savedState);
+      setLastSavedTime(getLastSavedTime());
+      alert('Board state loaded successfully!');
+    } else {
+      alert('No saved state found.');
+    }
+  };
+
+  const handleReset = () => {
+    if (window.confirm('Are you sure you want to reset the board to initial state? This will clear all current cards.')) {
+      updateColumns(initialColumns);
+      alert('Board reset to initial state.');
+    }
+  };
+
+  const handleClearStorage = () => {
+    if (window.confirm('Are you sure you want to clear all saved data? This cannot be undone.')) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(TIMESTAMP_KEY);
+      setLastSavedTime(null);
+      alert('All saved data cleared.');
+    }
+  };
 
   const handleAddCard = (columnId: string) => {
     const newCard: Card = {
@@ -102,7 +183,7 @@ const KanbanBoard: React.FC = () => {
       priority: 'medium'
     };
 
-    setColumns(prevColumns =>
+    updateColumns(prevColumns =>
       prevColumns.map(column =>
         column.id === columnId
           ? { ...column, cards: [...column.cards, newCard] }
@@ -115,20 +196,35 @@ const KanbanBoard: React.FC = () => {
     console.log(`Card clicked: ${cardId}`);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDragStart = (e: React.DragEvent, cardId: string) => {
     e.dataTransfer.setData('cardId', cardId);
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggingCardId(cardId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingCardId(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
+  const handleDragEnter = (columnId: string) => {
+    setDraggingOverColumn(columnId);
+  };
+
+  const handleDragLeave = () => {
+    setDraggingOverColumn(null);
+  };
+
   const handleDrop = (e: React.DragEvent, columnId: string) => {
     e.preventDefault();
+    setDraggingOverColumn(null);
+    setDraggingCardId(null);
     const cardId = e.dataTransfer.getData('cardId');
     
-    setColumns(prevColumns => {
+    updateColumns(prevColumns => {
       const newColumns = [...prevColumns];
       let cardToMove: Card | null = null;
       
@@ -154,8 +250,48 @@ const KanbanBoard: React.FC = () => {
   return (
     <div className="kanban-board p-6 bg-gray-100 min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Project Kanban Board</h1>
-        <p className="text-gray-600">Drag and drop cards between columns to update their status</p>
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Project Kanban Board</h1>
+            <p className="text-gray-600">Drag and drop cards between columns to update their status</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="text-xs text-gray-500 mb-1">
+              Auto-save enabled • 
+              {lastSavedTime ? ` Last saved: ${new Date(lastSavedTime).toLocaleTimeString()}` : ' Not saved yet'}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleManualSave}
+                className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                title="Manually save current state"
+              >
+                Save
+              </button>
+              <button
+                onClick={handleManualLoad}
+                className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
+                title="Load saved state"
+              >
+                Load
+              </button>
+              <button
+                onClick={handleReset}
+                className="px-3 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition-colors"
+                title="Reset to initial state"
+              >
+                Reset
+              </button>
+              <button
+                onClick={handleClearStorage}
+                className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                title="Clear all saved data"
+              >
+                Clear Data
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -163,7 +299,10 @@ const KanbanBoard: React.FC = () => {
           <div
             key={column.id}
             onDragOver={handleDragOver}
+            onDragEnter={() => handleDragEnter(column.id)}
+            onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, column.id)}
+            className={draggingOverColumn === column.id ? 'ring-2 ring-blue-400 rounded-lg' : ''}
           >
             <KanbanColumn
               title={column.title}
@@ -171,6 +310,8 @@ const KanbanBoard: React.FC = () => {
               columnId={column.id}
               onAddCard={() => handleAddCard(column.id)}
               onCardClick={handleCardClick}
+              onDragStart={handleDragStart}
+              draggingCardId={draggingCardId}
             />
           </div>
         ))}

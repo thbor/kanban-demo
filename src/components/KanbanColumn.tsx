@@ -16,6 +16,8 @@ interface KanbanColumnProps {
   columnId: string;
   onAddCard?: () => void;
   onCardClick?: (cardId: string) => void;
+  onDragStart?: (e: React.DragEvent, cardId: string) => void;
+  draggingCardId?: string | null;
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -23,7 +25,9 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   cards,
   columnId,
   onAddCard,
-  onCardClick
+  onCardClick,
+  onDragStart,
+  draggingCardId
 }) => {
   const columnColors: Record<string, string> = {
     todo: 'bg-blue-50 border-blue-200',
@@ -68,13 +72,16 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
             )}
           </div>
         ) : (
-          cards.map((card) => (
+           cards.map((card) => (
             <div
               key={card.id}
               onClick={() => onCardClick && onCardClick(card.id)}
               className="cursor-pointer"
+              draggable
+              onDragStart={(e) => onDragStart && onDragStart(e, card.id)}
+              onDragEnd={() => {}}
             >
-              <KanbanCard {...card} />
+              <KanbanCard {...card} isDragging={card.id === draggingCardId} />
             </div>
           ))
         )}

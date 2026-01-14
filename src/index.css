@@ -40,9 +40,15 @@ code {
 .text-green-800 { color: #166534; }
 .text-red-800 { color: #991b1b; }
 
+.opacity-50 { opacity: 0.5; }
+
+.ring-2 { box-shadow: 0 0 0 2px; }
+.ring-blue-400 { --tw-ring-color: #60a5fa; }
+
 .border { border-width: 1px; }
 .border-gray-200 { border-color: #e5e7eb; }
 .border-blue-200 { border-color: #bfdbfe; }
+.border-blue-400 { border-color: #60a5fa; }
 .border-yellow-200 { border-color: #fde68a; }
 .border-purple-200 { border-color: #e9d5ff; }
 .border-green-200 { border-color: #bbf7d0; }
@@ -112,3 +118,30 @@ code {
 }
 
 .min-h-screen { min-height: 100vh; }
+
+/* Button styles */
+.bg-blue-500 { background-color: #3b82f6; }
+.bg-green-500 { background-color: #10b981; }
+.bg-yellow-500 { background-color: #f59e0b; }
+.bg-red-500 { background-color: #ef4444; }
+
+.hover\:bg-blue-600:hover { background-color: #2563eb; }
+.hover\:bg-green-600:hover { background-color: #059669; }
+.hover\:bg-yellow-600:hover { background-color: #d97706; }
+.hover\:bg-red-600:hover { background-color: #dc2626; }
+
+.text-white { color: white; }
+
+.px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+.py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+
+.rounded { border-radius: 0.25rem; }
+
+.transition-colors { transition-property: background-color, border-color, color, fill, stroke; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+
+.flex-col { flex-direction: column; }
+.gap-2 { gap: 0.5rem; }
+.justify-between { justify-content: space-between; }
+.items-start { align-items: flex-start; }

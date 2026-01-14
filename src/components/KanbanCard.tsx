@@ -7,6 +7,7 @@ interface KanbanCardProps {
   assignee?: string;
   priority?: 'low' | 'medium' | 'high';
   tags?: string[];
+  isDragging?: boolean;
 }
 
 const KanbanCard: React.FC<KanbanCardProps> = ({
@@ -15,7 +16,8 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
   description,
   assignee,
   priority = 'medium',
-  tags = []
+  tags = [],
+  isDragging = false
 }) => {
   const priorityColors = {
     low: 'bg-green-100 text-green-800',
@@ -24,7 +26,7 @@ const KanbanCard: React.FC<KanbanCardProps> = ({
   };
 
   return (
-    <div className="kanban-card bg-white rounded-lg shadow-md p-4 mb-3 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+    <div className={`kanban-card bg-white rounded-lg shadow-md p-4 mb-3 border border-gray-200 hover:shadow-lg transition-shadow duration-200 ${isDragging ? 'opacity-50 border-blue-400' : ''}`}>
       <div className="flex justify-between items-start mb-2">
         <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
         <span className={`text-xs px-2 py-1 rounded-full ${priorityColors[priority]}`}>
